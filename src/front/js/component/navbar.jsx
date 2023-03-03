@@ -1,21 +1,59 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "/workspace/proyecto-4geeks/docs/assets/logo.png";
+import { Context } from "../store/appContext";
+import { signOut } from "firebase/auth"
+import { auth } from "../firebase/firebase.js"
+import { Toaster, toast } from "react-hot-toast";
+import { useAuth } from "../context/authContext.js";
+
+
+export function loginCheck(user){
+  const loggedOutLinks = document.querySelectorAll('.logged-out')
+  const loggedInLinks = document.querySelectorAll('.logged-in')
+  if(user){
+    loggedOutLinks.forEach(link => link.style.display = 'none')
+    loggedInLinks.forEach(link => link.style.display = 'block')
+  } else {
+    loggedOutLinks.forEach(link => link.style.display = 'block')
+    loggedInLinks.forEach(link => link.style.display = 'none')
+  }
+
+}
+
 export const Navbar = () => {
-  const [links, setLinks] = useState([
-    { text: "Artistas", href: "/artistas" },
-    { text: "Quienes somos", href: "/quienes" },
-    { text: "Caracteristicas", href: "/caracteristicas" },
-    { text: "Terminos y Condiciones", href: "/terminos" },
-    { text: "Inicio de sesion", href: "/login" },
-    { text: " ", href: "/" },
-  ]);
+  const { store, actions } = useContext(Context)
+  const navigate = useNavigate()
+  const { user, usuariodb } = useAuth()
+
+
+  async function loggingout (event) {
+    event.preventDefault();
+    try {
+      navigate("/")
+      await signOut(auth)
+      console.log("signup out");
+      toast('Hasta la proxima!', {
+        icon: '👋🏻',
+      });
+    } catch (error) {
+      console.log(error)
+    }
+
+  }
+
+
+
+	const [links, setLinks] = useState ([
+    {text: "Artistas", href: "/artistas" },
+    {text: "Eventos", href: "/eventos" }
+  ])
 
   return (
-    <nav className="navbar navbar-dark bg-dark mb-3 ">
+    <nav className="navbar  bg-black  sticky-top ">
       <a className="navbar-brand" href="/" ><img src={logo} /></a>
       
-      <nav className="navbar navbar-expand-md bg-dark">
+      <nav className="navbar navbar-expand-md bg-black">
         <div className="container-fluid ">
           <a className="navbar-brand" href="#"></a>
           
@@ -39,10 +77,47 @@ export const Navbar = () => {
                   </Link>
                 </li>
               ))}
+              {user == null && (
+                <li className="nav-item logged-out">
+                  <Link className="nav-link " to='/login'>
+                  Inicio de sesion
+                 </Link>
+                </li>
+              )}
+              <li className="nav-item">
+              {usuariodb && usuariodb.role === "Artista" && (
+								<Link className="nav-link artist-role" to='/perfil'>
+                Mi Perfil Artista
+                </Link>
+							)}
+              </li>
+              <li className="nav-item">
+              {usuariodb && usuariodb.role === "Artista" && (
+								<Link className="nav-link artist-role" to='/dashboard'>
+                  Dashboard
+                </Link>
+							)}
+              </li>
+              {user == null && (
+                <li className="nav-item logged-out">
+                  <Link className="nav-link" to="/signup">
+                    Registrarse
+                  </Link>
+                </li>
+              )}
+              {user &&(
+                <li className="nav-item logged-in">
+                  <a className="nav-link" id="logout" onClick={loggingout} href=''>Cerrar sesion</a>
+                </li>
+              )}
             </ul>
           </div>
         </div>
       </nav>
+      <Toaster
+				position="top-center"
+				reverseOrder={false}
+			/>
     </nav>
   );
 };
